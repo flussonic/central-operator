@@ -1,0 +1,27 @@
+# permissions for end users to view centrals.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: central-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: central-operator
+    app.kubernetes.io/part-of: central-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: central-viewer-role
+rules:
+- apiGroups:
+  - media.flussonic.com
+  resources:
+  - centrals
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - media.flussonic.com
+  resources:
+  - centrals/status
+  verbs:
+  - get
