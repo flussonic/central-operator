@@ -1,0 +1,84 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  labels:
+    name: postgres
+spec:
+  ports:
+  - port: 5432
+    targetPort: 5432
+    name: postgres
+  selector:
+    app: postgres
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: "postgres:15.3"
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_USER
+          value: test
+        - name: POSTGRES_PASSWORD
+          value: test
+        - name: POSTGRES_DB
+          value: test_c
+        - name: POSTGRES_HOST_AUTH_METHOD
+          value: trust
+        livenessProbe:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - exec pg_isready -U "postgres" -h 127.0.0.1
+          failureThreshold: 2
+          initialDelaySeconds: 120
+          periodSeconds: 60
+          timeoutSeconds: 30
+---
+apiVersion: media.flussonic.com/v1alpha1
+kind: Central
+metadata:
+  labels:
+    app.kubernetes.io/name: central
+    app.kubernetes.io/instance: central-sample
+    app.kubernetes.io/part-of: central-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: central-operator
+  name: central-sample
+spec:
+  database: "postgresql://test:test@postgres.default.svc.cluster.local:5432/test_c"
+  image: "flussonic/central:v24.03"
+  api_key: "apikey"
+  edit_auth: "admin pass"
+  cluster_node_provision_enabled: "false"
+  api_url: "http://central-sample.default.svc.cluster.local"
+  log_requests: true
+  http_port: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: central-sample
+spec:
+  defaultBackend:
+    service:
+      name: central-sample
+      port:
+        number: 80

@@ -27,7 +27,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	mediav1 "flussonic.com/central-operator/api/v1"
+	mediav1alpha1 "flussonic.com/central/operator/api/v1alpha1"
 )
 
 var _ = Describe("Central Controller", func() {
@@ -40,13 +40,13 @@ var _ = Describe("Central Controller", func() {
 			Name:      resourceName,
 			Namespace: "default", // TODO(user):Modify as needed
 		}
-		central := &mediav1.Central{}
+		central := &mediav1alpha1.Central{}
 
 		BeforeEach(func() {
 			By("creating the custom resource for the Kind Central")
 			err := k8sClient.Get(ctx, typeNamespacedName, central)
 			if err != nil && errors.IsNotFound(err) {
-				resource := &mediav1.Central{
+				resource := &mediav1alpha1.Central{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resourceName,
 						Namespace: "default",
@@ -59,7 +59,7 @@ var _ = Describe("Central Controller", func() {
 
 		AfterEach(func() {
 			// TODO(user): Cleanup logic after each test, like removing the resource instance.
-			resource := &mediav1.Central{}
+			resource := &mediav1alpha1.Central{}
 			err := k8sClient.Get(ctx, typeNamespacedName, resource)
 			Expect(err).NotTo(HaveOccurred())
 

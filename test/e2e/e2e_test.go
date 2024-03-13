@@ -24,7 +24,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"flussonic.com/central-operator/test/utils"
+	"flussonic.com/central/operator/test/utils"
 )
 
 const namespace = "central-operator-system"

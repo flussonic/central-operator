@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1
+package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,7 +27,6 @@ import (
 type CentralSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-
 	Image           string            `json:"image"`
 	Database        string            `json:"database"`
 	WebNodeSelector map[string]string `json:"webNodeSelector,omitempty" protobuf:"bytes,7,rep,name=webNodeSelector"`
@@ -36,6 +35,8 @@ type CentralSpec struct {
 	APIKey                      string `json:"api_key"`
 	EditAuth                    string `json:"edit_auth"`
 	ClusterNodeProvisionEnabled string `json:"cluster_node_provision_enabled"`
+	LogRequests                 bool   `json:"log_requests"`
+	HTTPPort                    int    `json:"http_port"`
 }
 
 // CentralStatus defines the observed state of Central

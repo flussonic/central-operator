@@ -18,18 +18,21 @@ package controller
 
 import (
 	"context"
+	"fmt"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	mediav1 "flussonic.com/central-operator/api/v1"
+	mediav1alpha1 "flussonic.com/central/operator/api/v1alpha1"
 )
 
 // CentralReconciler reconciles a Central object
@@ -50,9 +53,11 @@ type CentralReconciler struct {
 // the user.
 //
 // For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.17.0/pkg/reconcile
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.16.3/pkg/reconcile
 func (r *CentralReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	central := &mediav1.Central{}
+	_ = log.FromContext(ctx)
+
+	central := &mediav1alpha1.Central{}
 	err := r.Client.Get(ctx, req.NamespacedName, central)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -63,22 +68,26 @@ func (r *CentralReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	retry, err := r.deployCentral(ctx, central)
 	if retry {
+		fmt.Printf("retry\n")
 		return ctrl.Result{Requeue: true}, nil
 	}
 	if err != nil {
+		fmt.Printf("error:%s\n", err.Error())
 		return ctrl.Result{}, err
 	}
+	fmt.Println("ok")
+
 	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *CentralReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&mediav1.Central{}).
+		For(&mediav1alpha1.Central{}).
 		Complete(r)
 }
 
-func (r *CentralReconciler) deployCentral(ctx context.Context, w *mediav1.Central) (bool, error) {
+func (r *CentralReconciler) deployCentral(ctx context.Context, w *mediav1alpha1.Central) (bool, error) {
 	labels := map[string]string{
 		"app": w.Name,
 	}
@@ -97,7 +106,7 @@ func (r *CentralReconciler) deployCentral(ctx context.Context, w *mediav1.Centra
 				Ports: []corev1.ServicePort{{
 					Name:       w.Name,
 					Port:       80,
-					TargetPort: intstr.FromInt(9019),
+					TargetPort: intstr.FromInt(80),
 				}},
 			},
 		}
@@ -128,6 +137,14 @@ func (r *CentralReconciler) deployCentral(ctx context.Context, w *mediav1.Centra
 		{
 			Name:  "CENTRAL_LOG_LEVEL",
 			Value: "debug",
+		},
+		{
+			Name:  "CENTRAL_HTTP_PORT",
+			Value: fmt.Sprint(w.Spec.HTTPPort),
+		},
+		{
+			Name:  "CENTRAL_EDIT_AUTH",
+			Value: w.Spec.EditAuth,
 		},
 	}
 
