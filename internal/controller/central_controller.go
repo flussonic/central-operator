@@ -17,12 +17,20 @@ limitations under the License.
 package controller
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"strconv"
+	"time"
 
+	"github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -30,7 +38,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	mediav1alpha1 "flussonic.com/central/operator/api/v1alpha1"
 )
@@ -39,6 +46,18 @@ import (
 type CentralReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+}
+
+type CentralStreamers struct {
+	Streamers []CentralStreamer `json:"streamers"`
+}
+
+type CentralStreamer struct {
+	Hostname          string `json:"hostname"`
+	APIUrl            string `json:"api_url,omitempty"`
+	PrivatePayloadUrl string `json:"private_payload_url,omitempty"`
+	PublicPayloadUrl  string `json:"public_payload_url,omitempty"`
+	ClusterKey        string `json:"cluster_key,omitempty"`
 }
 
 //+kubebuilder:rbac:groups=media.flussonic.com,resources=centrals,verbs=get;list;watch;create;update;patch;delete
@@ -55,27 +74,33 @@ type CentralReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.16.3/pkg/reconcile
 func (r *CentralReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	log.Info().Msg("central reconciler: reconcile started...")
 
-	central := &mediav1alpha1.Central{}
-	err := r.Client.Get(ctx, req.NamespacedName, central)
-	if err != nil {
+	spec := &mediav1alpha1.Central{}
+	if err := r.Client.Get(ctx, req.NamespacedName, spec); err != nil {
 		if errors.IsNotFound(err) {
 			return ctrl.Result{}, nil
 		}
+		log.Error().Msgf("central reconciler get central error:%s", err.Error())
 		return ctrl.Result{}, err
 	}
 
-	retry, err := r.deployCentral(ctx, central)
+	retry, err := r.deployCentral(ctx, spec)
 	if retry {
-		fmt.Printf("retry\n")
 		return ctrl.Result{Requeue: true}, nil
 	}
 	if err != nil {
-		fmt.Printf("error:%s\n", err.Error())
+		log.Error().Msgf("central reconciler deploy central error:%s", err.Error())
 		return ctrl.Result{}, err
 	}
-	fmt.Println("ok")
+
+	result, err := r.provisionStreamers(ctx, spec)
+	if err != nil || result.Requeue {
+		if err != nil {
+			log.Error().Msgf("central reconciler provision streamers error:%s", err.Error())
+		}
+		return result, err
+	}
 
 	return ctrl.Result{}, nil
 }
@@ -85,6 +110,68 @@ func (r *CentralReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&mediav1alpha1.Central{}).
 		Complete(r)
+}
+
+func CreateCoreEnvs(s *mediav1alpha1.Central) []corev1.EnvVar {
+	return []corev1.EnvVar{
+		{
+			Name:  "CENTRAL_API_KEY",
+			Value: s.Spec.APIKey,
+		},
+		{
+			Name:  "CENTRAL_DATABASE_URL",
+			Value: s.Spec.Database,
+		},
+		{
+			Name:  "CLUSTER_NODE_CONFIG_PROVISION_ENABLED",
+			Value: "false",
+		},
+		{
+			Name:  "CENTRAL_API_URL",
+			Value: s.Spec.APIURL,
+		},
+		{
+			Name:  "CENTRAL_LOG_REQUESTS",
+			Value: "true",
+		},
+		{
+			Name:  "CENTRAL_LOG_LEVEL",
+			Value: "debug",
+		},
+		{
+			Name:  "CENTRAL_HTTP_PORT",
+			Value: strconv.FormatInt(int64(s.Spec.HTTPPort), 10),
+		},
+		{
+			Name:  "CENTRAL_EDIT_AUTH",
+			Value: s.Spec.EditAuth,
+		},
+		{
+			Name:  "OBSERVER_POLLING_INTERVAL",
+			Value: "2s",
+		},
+	}
+}
+
+func CreateProvisionerEnvs(s *mediav1alpha1.Central) []corev1.EnvVar {
+	return []corev1.EnvVar{
+		{
+			Name:  "CLUSTER_KEY",
+			Value: s.Spec.ProvisionerClusterKey,
+		},
+		{
+			Name:  "API_KEY",
+			Value: s.Spec.APIKey,
+		},
+		{
+			Name:  "SELECTOR",
+			Value: s.Spec.ProvisionerSelector,
+		},
+		{
+			Name:  "CENTRAL_API",
+			Value: s.Spec.APIURL,
+		},
+	}
 }
 
 func (r *CentralReconciler) deployCentral(ctx context.Context, w *mediav1alpha1.Central) (bool, error) {
@@ -102,11 +189,11 @@ func (r *CentralReconciler) deployCentral(ctx context.Context, w *mediav1alpha1.
 			},
 			Spec: corev1.ServiceSpec{
 				Selector: labels,
-				Type:     "ClusterIP",
+				Type:     corev1.ServiceTypeClusterIP,
 				Ports: []corev1.ServicePort{{
 					Name:       w.Name,
-					Port:       80,
-					TargetPort: intstr.FromInt(80),
+					Port:       9019,
+					TargetPort: intstr.FromInt(9019),
 				}},
 			},
 		}
@@ -121,43 +208,18 @@ func (r *CentralReconciler) deployCentral(ctx context.Context, w *mediav1alpha1.
 
 	replicas := int32(1)
 
-	envs := []corev1.EnvVar{
-		{
-			Name:  "CENTRAL_API_KEY",
-			Value: w.Spec.APIKey,
-		},
-		{
-			Name:  "CENTRAL_DATABASE_URL",
-			Value: w.Spec.Database,
-		},
-		{
-			Name:  "CENTRAL_API_URL",
-			Value: w.Spec.APIURL,
-		},
-		{
-			Name:  "CENTRAL_LOG_LEVEL",
-			Value: "debug",
-		},
-		{
-			Name:  "CENTRAL_HTTP_PORT",
-			Value: fmt.Sprint(w.Spec.HTTPPort),
-		},
-		{
-			Name:  "CENTRAL_EDIT_AUTH",
-			Value: w.Spec.EditAuth,
-		},
-	}
+	envs := CreateCoreEnvs(w)
 
 	deployment := &appsv1.Deployment{}
 
 	err = r.Client.Get(ctx, types.NamespacedName{Name: w.Name, Namespace: w.Namespace}, deployment)
 	if err != nil && errors.IsNotFound(err) {
 		spec := corev1.PodSpec{
-			NodeSelector: w.Spec.WebNodeSelector,
+			NodeSelector: w.Spec.NodeSelector,
 			Containers: []corev1.Container{{
 				Name:            w.Name,
 				Image:           w.Spec.Image,
-				ImagePullPolicy: "IfNotPresent",
+				ImagePullPolicy: corev1.PullIfNotPresent,
 				Env:             envs,
 			}},
 		}
@@ -190,7 +252,7 @@ func (r *CentralReconciler) deployCentral(ctx context.Context, w *mediav1alpha1.
 		return false, err
 	}
 
-	deployment.Spec.Template.Spec.NodeSelector = w.Spec.WebNodeSelector
+	deployment.Spec.Template.Spec.NodeSelector = w.Spec.NodeSelector
 	deployment.Spec.Template.Spec.Containers[0].Image = w.Spec.Image
 	deployment.Spec.Template.Spec.Containers[0].Env = envs
 	deployment.Spec.Replicas = &replicas
@@ -200,4 +262,163 @@ func (r *CentralReconciler) deployCentral(ctx context.Context, w *mediav1alpha1.
 	}
 
 	return false, nil
+}
+
+func (r *CentralReconciler) provisionStreamers(
+	ctx context.Context,
+	s *mediav1alpha1.Central,
+) (ctrl.Result, error) {
+	pods := &corev1.PodList{}
+	if err := r.Client.List(ctx, pods, &client.ListOptions{
+		LabelSelector: labels.SelectorFromSet(labels.Set{
+			"app": s.Spec.ProvisionerSelector,
+		}),
+		Namespace: s.Namespace,
+	}); err != nil && !errors.IsNotFound(err) {
+		return ctrl.Result{}, err
+	}
+
+	existingStreamers := make(map[string]bool, len(pods.Items))
+	for _, pod := range pods.Items {
+		streamer := CentralStreamer{
+			Hostname:          pod.Spec.NodeName,
+			APIUrl:            "http://" + pod.Status.PodIP + ":81",
+			PrivatePayloadUrl: "http://" + pod.Status.PodIP + ":81",
+			PublicPayloadUrl:  "http://" + pod.Status.HostIP,
+			ClusterKey:        s.Spec.ProvisionerClusterKey,
+		}
+
+		payload, err := json.Marshal(streamer)
+		if err != nil {
+			fmt.Println("marshall err", err.Error())
+			continue
+		}
+
+		request, err := http.NewRequest(
+			http.MethodPut,
+			s.Spec.APIURL+"/central/api/v3/streamers/"+streamer.Hostname,
+			bytes.NewBuffer(payload),
+		)
+		if err != nil {
+			fmt.Println("new rq err", err.Error())
+			continue
+		}
+
+		request.Header.Add("Content-Type", "application/json")
+		request.Header.Add("Authorization", "Bearer "+s.Spec.APIKey)
+
+		client := http.Client{}
+
+		response, err := client.Do(request)
+		if err != nil {
+			fmt.Println("do err", err.Error())
+			continue
+		}
+		_ = response.Body.Close()
+
+		existingStreamers[streamer.Hostname] = true
+	}
+
+	centralStreamers, err := LoadCentralStreamers(
+		s.Spec.APIURL+"/central/api/v3",
+		s.Spec.APIKey,
+	)
+	if err != nil {
+		return ctrl.Result{}, fmt.Errorf("load central streamers failed:%s", err.Error())
+	}
+
+	if centralStreamers == nil || centralStreamers.Streamers == nil {
+		return ctrl.Result{}, nil
+	}
+
+	for _, streamer := range centralStreamers.Streamers {
+		if ok := existingStreamers[streamer.Hostname]; !ok {
+			if err := DeleteCentralStreamer(
+				s.Spec.APIURL+"/central/api/v3",
+				s.Spec.APIKey,
+				streamer.Hostname,
+			); err != nil {
+				log.Warn().Msgf("failed to delete streamer:%s", err.Error())
+				continue
+			}
+		}
+	}
+
+	return ctrl.Result{Requeue: true, RequeueAfter: time.Second * 5}, nil
+}
+
+func LoadCentralStreamers(
+	centralAPIURL string,
+	centralAPIKey string,
+) (*CentralStreamers, error) {
+	var centralStreamers CentralStreamers
+
+	request, err := http.NewRequest(
+		http.MethodGet,
+		centralAPIURL+"/streamers",
+		http.NoBody,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	request.Header.Add("Content-Type", "application/json")
+	request.Header.Add("Authorization", "Bearer "+centralAPIKey)
+
+	client := http.Client{}
+
+	response, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		_ = response.Body.Close()
+	}()
+
+	buf, _ := io.ReadAll(response.Body)
+	if err = json.Unmarshal(buf, &centralStreamers); err != nil {
+		return nil, fmt.Errorf("error:%s, body:%s", err.Error(), string(buf))
+	}
+
+	if err = json.Unmarshal(buf, &centralStreamers); err != nil {
+		return nil, fmt.Errorf("error:%s, body:%s", err.Error(), string(buf))
+	}
+	return &centralStreamers, nil
+}
+
+func DeleteCentralStreamer(
+	centralAPIURL string,
+	centralAPIKey string,
+	streamerHostname string,
+) error {
+	request, err := http.NewRequest(
+		http.MethodDelete,
+		centralAPIURL+"/streamers/"+streamerHostname,
+		http.NoBody,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	request.Header.Add("Content-Type", "application/json")
+	request.Header.Add("Authorization", "Bearer "+centralAPIKey)
+
+	client := http.Client{}
+
+	response, err := client.Do(request)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		_ = response.Body.Close()
+	}()
+
+	if response.StatusCode == http.StatusNoContent {
+		return nil
+	}
+	return fmt.Errorf("status code is not 204, actual:%d", response.StatusCode)
 }

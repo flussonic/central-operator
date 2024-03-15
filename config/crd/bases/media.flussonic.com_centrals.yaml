@@ -38,8 +38,6 @@ spec:
                 type: string
               api_url:
                 type: string
-              cluster_node_provision_enabled:
-                type: string
               database:
                 type: string
               edit_auth:
@@ -52,19 +50,24 @@ spec:
                 type: string
               log_requests:
                 type: boolean
-              webNodeSelector:
+              nodeSelector:
                 additionalProperties:
                   type: string
                 type: object
+              provisioner_cluster_key:
+                type: string
+              provisioner_selector:
+                type: string
             required:
             - api_key
             - api_url
-            - cluster_node_provision_enabled
             - database
             - edit_auth
             - http_port
             - image
             - log_requests
+            - provisioner_cluster_key
+            - provisioner_selector
             type: object
           status:
             description: CentralStatus defines the observed state of Central

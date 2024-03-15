@@ -27,16 +27,18 @@ import (
 type CentralSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Image           string            `json:"image"`
-	Database        string            `json:"database"`
-	WebNodeSelector map[string]string `json:"webNodeSelector,omitempty" protobuf:"bytes,7,rep,name=webNodeSelector"`
+	Image        string            `json:"image"`
+	Database     string            `json:"database"`
+	NodeSelector map[string]string `json:"nodeSelector,omitempty" protobuf:"bytes,7,rep,name=nodeSelector"`
 
-	APIURL                      string `json:"api_url"`
-	APIKey                      string `json:"api_key"`
-	EditAuth                    string `json:"edit_auth"`
-	ClusterNodeProvisionEnabled string `json:"cluster_node_provision_enabled"`
-	LogRequests                 bool   `json:"log_requests"`
-	HTTPPort                    int    `json:"http_port"`
+	APIURL      string `json:"api_url"`
+	APIKey      string `json:"api_key"`
+	EditAuth    string `json:"edit_auth"`
+	LogRequests bool   `json:"log_requests"`
+	HTTPPort    int    `json:"http_port"`
+
+	ProvisionerClusterKey string `json:"provisioner_cluster_key"`
+	ProvisionerSelector   string `json:"provisioner_selector"`
 }
 
 // CentralStatus defines the observed state of Central
