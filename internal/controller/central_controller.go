@@ -26,11 +26,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -74,14 +74,16 @@ type CentralStreamer struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.16.3/pkg/reconcile
 func (r *CentralReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log.Info().Msg("central reconciler: reconcile started...")
+	log := ctrllog.FromContext(ctx)
+
+	log.Info("central reconciler: reconcile started...")
 
 	spec := &mediav1alpha1.Central{}
 	if err := r.Client.Get(ctx, req.NamespacedName, spec); err != nil {
 		if errors.IsNotFound(err) {
 			return ctrl.Result{}, nil
 		}
-		log.Error().Msgf("central reconciler get central error:%s", err.Error())
+		log.Error(err, "central reconciler get central error")
 		return ctrl.Result{}, err
 	}
 
@@ -90,14 +92,14 @@ func (r *CentralReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{Requeue: true}, nil
 	}
 	if err != nil {
-		log.Error().Msgf("central reconciler deploy central error:%s", err.Error())
+		log.Error(err, "central reconciler deploy central error")
 		return ctrl.Result{}, err
 	}
 
 	result, err := r.provisionStreamers(ctx, spec)
 	if err != nil || result.Requeue {
 		if err != nil {
-			log.Error().Msgf("central reconciler provision streamers error:%s", err.Error())
+			log.Error(err, "central reconciler provision streamers error")
 		}
 		return result, err
 	}
@@ -268,6 +270,8 @@ func (r *CentralReconciler) provisionStreamers(
 	ctx context.Context,
 	s *mediav1alpha1.Central,
 ) (ctrl.Result, error) {
+	log := ctrllog.FromContext(ctx)
+
 	pods := &corev1.PodList{}
 	if err := r.Client.List(ctx, pods, &client.ListOptions{
 		LabelSelector: labels.SelectorFromSet(labels.Set{
@@ -280,6 +284,7 @@ func (r *CentralReconciler) provisionStreamers(
 
 	existingStreamers := make(map[string]bool, len(pods.Items))
 	for _, pod := range pods.Items {
+		// FIXME: Вот это всё надо делать настраиваемым снаружи, не хардкодом
 		streamer := CentralStreamer{
 			Hostname:          pod.Spec.NodeName,
 			APIUrl:            "http://" + pod.Status.PodIP + ":81",
@@ -338,7 +343,7 @@ func (r *CentralReconciler) provisionStreamers(
 				s.Spec.APIKey,
 				streamer.Hostname,
 			); err != nil {
-				log.Warn().Msgf("failed to delete streamer:%s", err.Error())
+				log.Error(err, "failed to delete streamer")
 				continue
 			}
 		}

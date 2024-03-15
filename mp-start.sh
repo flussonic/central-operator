@@ -37,5 +37,5 @@ kubectl label nodes streamer1 flussonic.com/streamer=true
 kubectl label nodes streamer2 flussonic.com/streamer=true
 kubectl label nodes central flussonic.com/central=true
 
-#kubectl apply -f https://flussonic.github.io/media-server-operator/latest/operator.yaml
+kubectl apply -f https://flussonic.github.io/media-server-operator/latest/operator.yaml
 kubectl apply -f ./docs/latest/operator.yaml
