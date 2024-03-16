@@ -156,43 +156,7 @@ rules:
 - apiGroups:
   - apps
   resources:
-  - deployments
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - apps
-  resources:
   - statefulsets
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - batch
-  resources:
-  - jobs
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - pods
   verbs:
   - create
   - delete
@@ -420,7 +384,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: flussonic/central-controller:24.3.0
+        image: flussonic/central-controller:24.3.1
         livenessProbe:
           httpGet:
             path: /healthz
