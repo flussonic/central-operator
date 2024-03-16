@@ -60,9 +60,14 @@ type CentralStreamer struct {
 	ClusterKey        string `json:"cluster_key,omitempty"`
 }
 
-//+kubebuilder:rbac:groups=media.flussonic.com,resources=centrals,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=media.flussonic.com,resources=centrals/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=media.flussonic.com,resources=centrals/finalizers,verbs=update
+// +kubebuilder:rbac:groups=media.flussonic.com,resources=centrals,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=media.flussonic.com,resources=centrals/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=media.flussonic.com,resources=centrals/finalizers,verbs=update
+// +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
