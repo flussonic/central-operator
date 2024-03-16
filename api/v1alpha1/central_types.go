@@ -27,18 +27,28 @@ import (
 type CentralSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Image        string            `json:"image"`
-	Database     string            `json:"database"`
+	Image string `json:"image"`
+	// Postgresql url
+	Database string `json:"database"`
+
+	// Selector for nodes with running central worker instances
 	NodeSelector map[string]string `json:"nodeSelector,omitempty" protobuf:"bytes,7,rep,name=nodeSelector"`
 
-	APIURL      string `json:"api_url"`
-	APIKey      string `json:"api_key"`
-	EditAuth    string `json:"edit_auth"`
-	LogRequests bool   `json:"log_requests"`
-	HTTPPort    int    `json:"http_port"`
+	// url of this installation of central
+	APIURL string `json:"api_url"`
+	// API key for connecting to this central node
+	APIKey string `json:"api_key"`
 
+	// Credentials for modifying installation of media server
+	EditAuth string `json:"edit_auth"`
+	// LogRequests bool   `json:"log_requests,omitempty"`
+
+	HTTPPort int `json:"http_port"`
+
+	// API key for accessing mediaserver instances
 	ProvisionerClusterKey string `json:"provisioner_cluster_key"`
-	ProvisionerSelector   string `json:"provisioner_selector"`
+	// Pod selector for locating mediaserver instances
+	ProvisionerSelector string `json:"provisioner_selector"`
 }
 
 // CentralStatus defines the observed state of Central

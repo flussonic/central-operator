@@ -92,23 +92,19 @@ func (r *CentralReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 
-	retry, err := r.deployCentral(ctx, spec)
-	if retry {
-		return ctrl.Result{Requeue: true}, nil
-	}
-	if err != nil {
-		log.Error(err, "central reconciler deploy central error")
-		return ctrl.Result{}, err
+	result, err := r.deployCentral(ctx, spec)
+	if err != nil || result.Requeue {
+		return result, err
 	}
 
-	result, err := r.provisionStreamers(ctx, spec)
+	result, err = r.provisionStreamers(ctx, spec)
 	if err != nil || result.Requeue {
 		if err != nil {
 			log.Error(err, "central reconciler provision streamers error")
 		}
 		return result, err
 	}
-
+	// FIXME: что делать, попав сюда? Ведь тут смысл оператора теряется, поды больше не будут опрашиваться
 	return ctrl.Result{}, nil
 }
 
@@ -116,6 +112,8 @@ func (r *CentralReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 func (r *CentralReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&mediav1alpha1.Central{}).
+		Owns(&appsv1.Deployment{}).
+		Owns(&corev1.Service{}).
 		Complete(r)
 }
 
@@ -146,7 +144,8 @@ func CreateCoreEnvs(s *mediav1alpha1.Central) []corev1.EnvVar {
 			Value: "debug",
 		},
 		{
-			Name:  "CENTRAL_HTTP_PORT",
+			Name: "CENTRAL_HTTP_PORT",
+			// FIXME: это поле не нужно пробрасывать из настроек. Достаточно выставить порт 80 и успокоиться
 			Value: strconv.FormatInt(int64(s.Spec.HTTPPort), 10),
 		},
 		{
@@ -181,7 +180,7 @@ func CreateProvisionerEnvs(s *mediav1alpha1.Central) []corev1.EnvVar {
 	}
 }
 
-func (r *CentralReconciler) deployCentral(ctx context.Context, w *mediav1alpha1.Central) (bool, error) {
+func (r *CentralReconciler) deployCentral(ctx context.Context, w *mediav1alpha1.Central) (ctrl.Result, error) {
 	labels := map[string]string{
 		"app": w.Name,
 	}
@@ -206,11 +205,11 @@ func (r *CentralReconciler) deployCentral(ctx context.Context, w *mediav1alpha1.
 		}
 		_ = ctrl.SetControllerReference(w, svc, r.Scheme)
 		if err = r.Client.Create(ctx, svc); err != nil {
-			return false, err
+			return ctrl.Result{}, err
 		}
-		return true, nil
+		return ctrl.Result{Requeue: true}, nil
 	} else if err != nil {
-		return false, err
+		return ctrl.Result{}, err
 	}
 
 	replicas := int32(1)
@@ -252,11 +251,11 @@ func (r *CentralReconciler) deployCentral(ctx context.Context, w *mediav1alpha1.
 		_ = ctrl.SetControllerReference(w, deploy, r.Scheme)
 		err = r.Client.Create(ctx, deploy)
 		if err != nil {
-			return false, err
+			return ctrl.Result{}, err
 		}
-		return true, nil
+		return ctrl.Result{Requeue: true}, nil
 	} else if err != nil {
-		return false, err
+		return ctrl.Result{}, err
 	}
 
 	deployment.Spec.Template.Spec.NodeSelector = w.Spec.NodeSelector
@@ -265,10 +264,10 @@ func (r *CentralReconciler) deployCentral(ctx context.Context, w *mediav1alpha1.
 	deployment.Spec.Replicas = &replicas
 
 	if err = r.Client.Update(ctx, deployment); err != nil {
-		return false, err
+		return ctrl.Result{}, err
 	}
 
-	return false, nil
+	return ctrl.Result{}, nil
 }
 
 func (r *CentralReconciler) provisionStreamers(
@@ -304,6 +303,7 @@ func (r *CentralReconciler) provisionStreamers(
 			continue
 		}
 
+		// FIXME: APIURL и APIKey надо сделать автоматически создаваемыми этим оператором
 		request, err := http.NewRequest(
 			http.MethodPut,
 			s.Spec.APIURL+"/central/api/v3/streamers/"+streamer.Hostname,

@@ -35,12 +35,16 @@ spec:
             description: CentralSpec defines the desired state of Central
             properties:
               api_key:
+                description: API key for connecting to this central node
                 type: string
               api_url:
+                description: url of this installation of central
                 type: string
               database:
+                description: Postgresql url
                 type: string
               edit_auth:
+                description: Credentials for modifying installation of media server
                 type: string
               http_port:
                 type: integer
@@ -48,15 +52,16 @@ spec:
                 description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
                   Important: Run "make" to regenerate code after modifying this file'
                 type: string
-              log_requests:
-                type: boolean
               nodeSelector:
                 additionalProperties:
                   type: string
+                description: Selector for nodes with running central worker instances
                 type: object
               provisioner_cluster_key:
+                description: API key for accessing mediaserver instances
                 type: string
               provisioner_selector:
+                description: Pod selector for locating mediaserver instances
                 type: string
             required:
             - api_key
@@ -65,7 +70,6 @@ spec:
             - edit_auth
             - http_port
             - image
-            - log_requests
             - provisioner_cluster_key
             - provisioner_selector
             type: object
