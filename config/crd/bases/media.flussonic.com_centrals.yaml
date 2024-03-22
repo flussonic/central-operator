@@ -54,8 +54,7 @@ spec:
                   UI.
                 type: string
               image:
-                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-                  Important: Run "make" to regenerate code after modifying this file'
+                description: Central Docker Image (https://hub.docker.com/r/flussonic/central)
                 type: string
               log_level:
                 description: Logging level
