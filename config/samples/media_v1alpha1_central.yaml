@@ -71,8 +71,6 @@ spec:
   api_key: "apikey"
   edit_auth: "admin pass"
   api_url: "http://central-sample.default.svc.cluster.local"
-  log_requests: true
-  http_port: 80
   provisioner_cluster_key: "clusterkey"
   provisioner_selector: "mediaserver-sample-streamer"
 ---

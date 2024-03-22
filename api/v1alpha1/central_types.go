@@ -28,29 +28,46 @@ type CentralSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	Image string `json:"image"`
-	// Postgresql url
+
+	// Postgresql Database connection string
+	// You must setup it by yourself
 	Database string `json:"database"`
 
 	// Selector for nodes with running central worker instances
 	NodeSelector map[string]string `json:"nodeSelector,omitempty" protobuf:"bytes,7,rep,name=nodeSelector"`
 
-	// url of this installation of central
+	// API_URL used for setting the hostname and port under which Central
+	// is accessible by Flussonic for CONFIG_EXTERNAL and http_proxy requests
 	APIURL string `json:"api_url"`
-	// API key for connecting to this central node
+
+	// API_KEY is used to access Central API
 	APIKey string `json:"api_key"`
 
-	// Credentials for modifying installation of media server
+	// Credentials for administrator access to the Central Admin UI.
+	// +kubebuilder:validation:Optional
 	EditAuth string `json:"edit_auth"`
 
 	// Enables logging HTTP-requests
+	// +kubebuilder:validation:Optional
 	LogRequests bool `json:"log_requests,omitempty"`
 
-	HTTPPort int `json:"http_port"`
+	// Logging level
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Enum:=debug;info;error
+	LogLevel string `json:"log_level,omitempty"`
 
-	// API key for accessing mediaserver instances
-	ProvisionerClusterKey string `json:"provisioner_cluster_key"`
-	// Pod selector for locating mediaserver instances
+	// Token for accessing dynamic streams
+	// +kubebuilder:validation:Optional
+	DynamicStreamsAuthToken string `json:"dynamic_streams_auth_token"`
+
+	// Pod selector for locating mediaserver instances.
+	// If not empty - Central will automatically provision streamers to cluster from k8s API
+	// +kubebuilder:validation:Optional
 	ProvisionerSelector string `json:"provisioner_selector"`
+
+	// API key for accessing mediaserver instances provisioned to Central
+	// +kubebuilder:validation:Optional
+	ProvisionerClusterKey string `json:"provisioner_cluster_key"`
 }
 
 // CentralStatus defines the observed state of Central

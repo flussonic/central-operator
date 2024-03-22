@@ -137,11 +137,11 @@ func CreateCoreEnvs(s *mediav1alpha1.Central) []corev1.EnvVar {
 		},
 		{
 			Name:  "CENTRAL_LOG_REQUESTS",
-			Value: "true",
+			Value: strconv.FormatBool(s.Spec.LogRequests),
 		},
 		{
 			Name:  "CENTRAL_LOG_LEVEL",
-			Value: "debug",
+			Value: s.Spec.LogLevel,
 		},
 		{
 			Name: "CENTRAL_HTTP_PORT",

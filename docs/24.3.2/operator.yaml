@@ -47,22 +47,34 @@ spec:
             description: CentralSpec defines the desired state of Central
             properties:
               api_key:
-                description: API key for connecting to this central node
+                description: API_KEY is used to access Central API
                 type: string
               api_url:
-                description: url of this installation of central
+                description: API_URL used for setting the hostname and port under
+                  which Central is accessible by Flussonic for CONFIG_EXTERNAL and
+                  http_proxy requests
                 type: string
               database:
-                description: Postgresql url
+                description: Postgresql Database connection string You must setup
+                  it by yourself
+                type: string
+              dynamic_streams_auth_token:
+                description: Token for accessing dynamic streams
                 type: string
               edit_auth:
-                description: Credentials for modifying installation of media server
+                description: Credentials for administrator access to the Central Admin
+                  UI.
                 type: string
-              http_port:
-                type: integer
               image:
                 description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
                   Important: Run "make" to regenerate code after modifying this file'
+                type: string
+              log_level:
+                description: Logging level
+                enum:
+                - debug
+                - info
+                - error
                 type: string
               log_requests:
                 description: Enables logging HTTP-requests
@@ -73,20 +85,19 @@ spec:
                 description: Selector for nodes with running central worker instances
                 type: object
               provisioner_cluster_key:
-                description: API key for accessing mediaserver instances
+                description: API key for accessing mediaserver instances provisioned
+                  to Central
                 type: string
               provisioner_selector:
-                description: Pod selector for locating mediaserver instances
+                description: Pod selector for locating mediaserver instances. If not
+                  empty - Central will automatically provision streamers to cluster
+                  from k8s API
                 type: string
             required:
             - api_key
             - api_url
             - database
-            - edit_auth
-            - http_port
             - image
-            - provisioner_cluster_key
-            - provisioner_selector
             type: object
           status:
             description: CentralStatus defines the observed state of Central
