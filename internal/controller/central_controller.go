@@ -146,7 +146,7 @@ func CreateCoreEnvs(s *mediav1alpha1.Central) []corev1.EnvVar {
 		{
 			Name: "CENTRAL_HTTP_PORT",
 			// FIXME: это поле не нужно пробрасывать из настроек. Достаточно выставить порт 80 и успокоиться
-			Value: strconv.FormatInt(int64(s.Spec.HTTPPort), 10),
+			Value: strconv.FormatInt(80, 10),
 		},
 		{
 			Name:  "CENTRAL_EDIT_AUTH",
@@ -198,8 +198,8 @@ func (r *CentralReconciler) deployCentral(ctx context.Context, w *mediav1alpha1.
 				Type:     corev1.ServiceTypeClusterIP,
 				Ports: []corev1.ServicePort{{
 					Name:       w.Name,
-					Port:       9019,
-					TargetPort: intstr.FromInt(9019),
+					Port:       80,
+					TargetPort: intstr.FromInt(80),
 				}},
 			},
 		}
