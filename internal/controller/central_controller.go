@@ -156,10 +156,6 @@ func CreateCoreEnvs(s *mediav1alpha1.Central) []corev1.EnvVar {
 			Name:  "CENTRAL_EDIT_AUTH",
 			Value: s.Spec.EditAuth,
 		},
-		{
-			Name:  "OBSERVER_POLLING_INTERVAL",
-			Value: "2s",
-		},
 	}
 }
 
