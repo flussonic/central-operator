@@ -27,6 +27,8 @@ import (
 type CentralSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+
+	// Central Docker Image (https://hub.docker.com/r/flussonic/central)
 	Image string `json:"image"`
 
 	// Postgresql Database connection string

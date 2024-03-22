@@ -128,7 +128,7 @@ func CreateCoreEnvs(s *mediav1alpha1.Central) []corev1.EnvVar {
 			Value: s.Spec.Database,
 		},
 		{
-			Name:  "CLUSTER_NODE_CONFIG_PROVISION_ENABLED",
+			Name:  "CENTRAL_CLUSTER_NODE_CONFIG_PROVISION_ENABLED",
 			Value: "false",
 		},
 		{
