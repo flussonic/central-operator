@@ -104,8 +104,8 @@ func (r *CentralReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}
 		return result, err
 	}
-	// FIXME: что делать, попав сюда? Ведь тут смысл оператора теряется, поды больше не будут опрашиваться
-	return ctrl.Result{}, nil
+
+	return ctrl.Result{RequeueAfter: time.Second * 60 * 2}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -144,8 +144,7 @@ func CreateCoreEnvs(s *mediav1alpha1.Central) []corev1.EnvVar {
 			Value: s.Spec.LogLevel,
 		},
 		{
-			Name: "CENTRAL_HTTP_PORT",
-			// FIXME: это поле не нужно пробрасывать из настроек. Достаточно выставить порт 80 и успокоиться
+			Name:  "CENTRAL_HTTP_PORT",
 			Value: strconv.FormatInt(80, 10),
 		},
 		{
@@ -299,7 +298,7 @@ func (r *CentralReconciler) provisionStreamers(
 
 		payload, err := json.Marshal(streamer)
 		if err != nil {
-			fmt.Println("marshall err", err.Error())
+			log.Error(err, "central reconciler provision_streamers streamer payload marshal failed")
 			continue
 		}
 
@@ -310,7 +309,7 @@ func (r *CentralReconciler) provisionStreamers(
 			bytes.NewBuffer(payload),
 		)
 		if err != nil {
-			fmt.Println("new rq err", err.Error())
+			log.Error(err, "central reconciler provision_streamers request creating failed")
 			continue
 		}
 
@@ -321,7 +320,7 @@ func (r *CentralReconciler) provisionStreamers(
 
 		response, err := client.Do(request)
 		if err != nil {
-			fmt.Println("do err", err.Error())
+			log.Error(err, "central reconciler provision_streamers central request failed")
 			continue
 		}
 		_ = response.Body.Close()
@@ -354,7 +353,7 @@ func (r *CentralReconciler) provisionStreamers(
 		}
 	}
 
-	return ctrl.Result{Requeue: true, RequeueAfter: time.Second * 5}, nil
+	return ctrl.Result{Requeue: true, RequeueAfter: time.Second * 60}, nil
 }
 
 func LoadCentralStreamers(
