@@ -149,6 +149,10 @@ func CreateCoreEnvs(s *mediav1alpha1.Central) []corev1.EnvVar {
 			Value: strconv.FormatInt(80, 10),
 		},
 		{
+			Name:  "CENTRAL_DYNAMIC_STREAMS_AUTH_TOKEN",
+			Value: s.Spec.DynamicStreamsAuthToken,
+		},
+		{
 			Name:  "CENTRAL_EDIT_AUTH",
 			Value: s.Spec.EditAuth,
 		},
