@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: flussonic/central-controller
-  newTag: 24.3.0
+  newTag: 24.3.2

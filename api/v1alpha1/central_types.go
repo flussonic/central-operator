@@ -41,7 +41,9 @@ type CentralSpec struct {
 
 	// Credentials for modifying installation of media server
 	EditAuth string `json:"edit_auth"`
-	// LogRequests bool   `json:"log_requests,omitempty"`
+
+	// Enables logging HTTP-requests
+	LogRequests bool `json:"log_requests,omitempty"`
 
 	HTTPPort int `json:"http_port"`
 

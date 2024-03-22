@@ -52,6 +52,9 @@ spec:
                 description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
                   Important: Run "make" to regenerate code after modifying this file'
                 type: string
+              log_requests:
+                description: Enables logging HTTP-requests
+                type: boolean
               nodeSelector:
                 additionalProperties:
                   type: string
