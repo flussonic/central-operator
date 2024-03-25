@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -35,41 +36,46 @@ type CentralSpec struct {
 	// You must setup it by yourself
 	Database string `json:"database"`
 
+	// (Optional) PodEnvVariables is a slice of environment variables that are added to the pods
+	// Default: (empty list)
+	// +kubebuilder:validation:Optional
+	PodEnvVariables []corev1.EnvVar `json:"env,omitempty"`
+
 	// Selector for nodes with running central worker instances
 	NodeSelector map[string]string `json:"nodeSelector,omitempty" protobuf:"bytes,7,rep,name=nodeSelector"`
 
 	// API_URL used for setting the hostname and port under which Central
 	// is accessible by Flussonic for CONFIG_EXTERNAL and http_proxy requests
-	APIURL string `json:"api_url"`
+	APIURL string `json:"apiUrl"`
 
 	// API_KEY is used to access Central API
-	APIKey string `json:"api_key"`
+	APIKey string `json:"apiKey"`
 
 	// Credentials for administrator access to the Central Admin UI.
 	// +kubebuilder:validation:Optional
-	EditAuth string `json:"edit_auth"`
+	EditAuth string `json:"editAuth"`
 
 	// Enables logging HTTP-requests
 	// +kubebuilder:validation:Optional
-	LogRequests bool `json:"log_requests,omitempty"`
+	LogRequests bool `json:"logRequests"`
 
 	// Logging level
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum:=debug;info;error
-	LogLevel string `json:"log_level,omitempty"`
+	LogLevel string `json:"logLevel,omitempty"`
 
 	// Token for accessing dynamic streams
 	// +kubebuilder:validation:Optional
-	DynamicStreamsAuthToken string `json:"dynamic_streams_auth_token"`
+	DynamicStreamsAuthToken string `json:"dynamicStreamsAuthToken"`
 
 	// Pod selector for locating mediaserver instances.
 	// If not empty - Central will automatically provision streamers to cluster from k8s API
 	// +kubebuilder:validation:Optional
-	ProvisionerSelector string `json:"provisioner_selector"`
+	ProvisionerSelector string `json:"provisionerSelector"`
 
 	// API key for accessing mediaserver instances provisioned to Central
 	// +kubebuilder:validation:Optional
-	ProvisionerClusterKey string `json:"provisioner_cluster_key"`
+	ProvisionerClusterKey string `json:"provisionerClusterKey"`
 }
 
 // CentralStatus defines the observed state of Central

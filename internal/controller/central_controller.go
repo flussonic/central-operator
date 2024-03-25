@@ -118,7 +118,7 @@ func (r *CentralReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func CreateCoreEnvs(s *mediav1alpha1.Central) []corev1.EnvVar {
-	return []corev1.EnvVar{
+	envs := []corev1.EnvVar{
 		{
 			Name:  "CENTRAL_API_KEY",
 			Value: s.Spec.APIKey,
@@ -156,6 +156,8 @@ func CreateCoreEnvs(s *mediav1alpha1.Central) []corev1.EnvVar {
 			Value: s.Spec.EditAuth,
 		},
 	}
+	envs = append(envs, s.Spec.PodEnvVariables...)
+	return envs
 }
 
 func CreateProvisionerEnvs(s *mediav1alpha1.Central) []corev1.EnvVar {
