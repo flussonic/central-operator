@@ -68,11 +68,18 @@ spec:
     flussonic.com/central: "true"
   database: "postgresql://test:test@postgres.default.svc.cluster.local:5432/test_c"
   image: "flussonic/central:v24.03"
-  api_key: "apikey"
-  edit_auth: "admin pass"
-  api_url: "http://central-sample.default.svc.cluster.local"
-  provisioner_cluster_key: "clusterkey"
-  provisioner_selector: "mediaserver-sample-streamer"
+  apiKey: "apikey"
+  editAuth: "admin pass"
+  apiUrl: "http://central-sample.default.svc.cluster.local"
+  provisionerClusterkey: "clusterkey"
+  provisionerSelector: "mediaserver-sample-streamer"
+  env:
+    - name: LICENSE_KEY
+      valueFrom:
+        secretKeyRef:
+          name: flussonic-license
+          key: license_key
+          optional: false
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
