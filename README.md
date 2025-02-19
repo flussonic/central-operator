@@ -32,7 +32,11 @@ kubectl create secret generic flussonic-license \
 После чего необходимо добавить нужные кастомные ресурсы, чтобы операторы развернули и начали провижнить соответствующие стандартные ресурсы kubernetes:
 
 ```sh
-kubectl apply -k https://raw.githubusercontent.com/flussonic/central-operator/master/config/samples
+kubectl apply -f https://raw.githubusercontent.com/flussonic/central-operator/master/config/samples/ingress.yaml
+kubectl apply -f https://raw.githubusercontent.com/flussonic/central-operator/master/config/samples/media_valpha1_mediaserver.yaml
+kubectl apply -f https://raw.githubusercontent.com/flussonic/central-operator/master/config/samples/media_valpha1_central.yaml
+kubectl apply -f https://raw.githubusercontent.com/flussonic/central-operator/master/config/samples/postgres.yaml
+kubectl apply -f https://raw.githubusercontent.com/flussonic/central-operator/master/config/samples/redis.yaml
 ```
 
 Примечание: сейчас централ корректно работает только с nginx в качестве ingess-контроллера (требование агента), поэтому если по умолчанию используется что-то другое, необходимо удалить его из кубера и применить манифесты ingress-nginx:
@@ -41,7 +45,7 @@ kubectl apply -k https://raw.githubusercontent.com/flussonic/central-operator/ma
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
 ```
 
-При выполнении всех инструкций выше должен был развернуться кластер из постгреса, двух инстансов централа и одного медиасервера.
+При выполнении всех инструкций выше должен был развернуться кластер из постгреса, редиса, двух инстансов централа и одного медиасервера.
 
 ## License
 
