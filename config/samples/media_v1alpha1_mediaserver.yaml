@@ -1,0 +1,48 @@
+apiVersion: media.flussonic.com/v1alpha1
+kind: MediaServer
+metadata:
+  labels:
+    app.kubernetes.io/name: mediaserver
+    app.kubernetes.io/instance: mediaserver-sample
+    app.kubernetes.io/part-of: media-server-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: media-server-operator
+  name: mediaserver
+spec:
+  version: "v25.01-34"
+  hostPort: 85
+  adminHostPort: 81
+  env:
+    - name: LICENSE_KEY
+      valueFrom:
+        secretKeyRef:
+          name: flussonic-license
+          key: license_key
+          optional: false
+    - name: STREAMER_CONFIG_EXTERNAL
+      value: "http://apikey@central.default.svc.cluster.local/streamer/api/v3/streamers/$(STREAMER_HOSTNAME)"
+    - name: FLUSSONIC_EDIT_AUTH
+      valueFrom:
+        secretKeyRef:
+          name: flussonic-license
+          key: edit_auth
+          optional: false
+    - name: STREAMER_LOG_LEVEL
+      value: "debug"
+  nodeSelector:
+    flussonic.com/streamer: "true"
+  configExtra:
+    watcher.conf: |
+      cluster_key clusterkey;
+      dvr watcher {
+        root /storage;
+      }
+      auth_backend vsaas {
+        backend http://watcher.default.svc.cluster.local/vsaas/api/camera_auth;
+      }
+  volumes:
+    - name: storage
+      mountPath: /storage
+      hostPath:
+        path: /storage
+        type: DirectoryOrCreate

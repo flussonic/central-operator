@@ -1,0 +1,44 @@
+apiVersion: media.flussonic.com/v1alpha1
+kind: Watcher
+metadata:
+  labels:
+    app.kubernetes.io/name: watcher
+    app.kubernetes.io/instance: watcher-sample
+    app.kubernetes.io/part-of: watcher-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: watcher-operator
+  name: watcher-sample
+spec:
+  central: "http://central.default.svc.cluster.local"
+  database: "postgresql://test:test@postgres.default.svc.cluster.local:5432/test_c"
+  image: "flussonic/watcher:v25.01-31"
+  env:
+    - name: LICENSE_KEY
+      valueFrom:
+        secretKeyRef:
+          name: flussonic-license
+          key: license_key
+          optional: false
+    - name: WATCHER_ADMIN_LOGIN
+      valueFrom:
+        secretKeyRef:
+          name: flussonic-license
+          key: login
+          optional: false
+    - name: WATCHER_ADMIN_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: flussonic-license
+          key: pass
+          optional: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: watcher-service
+spec:
+  selector:
+    app: watcher
+  ports:
+    - port: 80
+      targetPort: 80

@@ -1,0 +1,33 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: central-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /vsaas
+            pathType: Prefix
+            backend:
+              service:
+                name: watcher-service
+                port:
+                  number: 80
+          - path: /watcher
+            pathType: Prefix
+            backend:
+              service:
+                name: watcher-service
+                port:
+                  number: 80
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: central
+                port:
+                  number: 80

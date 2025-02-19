@@ -1,0 +1,9 @@
+## Append samples of your project ##
+resources:
+- media_v1alpha1_central.yaml
+- media_v1alpha1_mediaserver.yaml
+- media_v1alpha1_watcher.yaml
+- postgres.yaml
+- redis.yaml
+- ingress.yaml
+#+kubebuilder:scaffold:manifestskustomizesamples
