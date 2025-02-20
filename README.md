@@ -1,24 +1,28 @@
 
 # central-operator
 
-// TODO(user): Add simple overview of use/purpose
-
 ## Description
 
-// TODO(user): An in-depth paragraph about your project and overview of use
+The central-operator deploys central's instances and performs monitoring and management of them.
+
+The functions of the operator include:
+
+- Deploying instances of Central
+- Performing database migrations
+- Detecting Flussonics in the cluster and automatically adding them to Central
 
 ## Getting Started
 
-**Действия для запуска кластера из нескольких инстансов централа и флюссоником.**
+**Steps to launch a cluster with multiple instances of Central and Flussonic.**
 
-Примените операторы централа и медиасервера, чтобы k8s имел представление о CRD и в нем запустились экземпляры операторов, ждущие появления в кластере соответствующих ресурсов:
+Apply the Central and Media Server operators so that Kubernetes recognizes the CRDs and runs operator instances waiting for the corresponding resources to appear in the cluster:
 
 ```sh
 kubectl apply -f https://flussonic.github.io/media-server-operator/latest/operator.yaml
 kubectl apply -f https://flussonic.github.io/central-operator/latest/operator.yaml
 ```
 
-После этого нужно добавить на ноды соответствующие лейблы и добавить необходимые секреты:
+Next, label the nodes accordingly and add the necessary secrets:
 
 ```sh
 kubectl label nodes node_name flussonic.com/streamer=true
@@ -27,25 +31,46 @@ kubectl create secret generic flussonic-license \
     --from-literal=edit_auth="root:password"
 ```
 
-\* node_name - имя ноды, на которую мы хотим, чтобы заехал флюссоник. Копия флюссоника заедет на каждую ноду, промаркированную соответствующим лейблом.
+\* node_name - the name of the node where Flussonic should run. Flussonic instances will be deployed on each node labeled accordingly.
 
-После чего необходимо добавить нужные кастомные ресурсы, чтобы операторы развернули и начали провижнить соответствующие стандартные ресурсы kubernetes:
+Then, add the required custom resources so that the operators can deploy and provision the corresponding standard Kubernetes resources:
 
 ```sh
 kubectl apply -f https://raw.githubusercontent.com/flussonic/central-operator/master/config/samples/ingress.yaml
-kubectl apply -f https://raw.githubusercontent.com/flussonic/central-operator/master/config/samples/media_valpha1_mediaserver.yaml
-kubectl apply -f https://raw.githubusercontent.com/flussonic/central-operator/master/config/samples/media_valpha1_central.yaml
+kubectl apply -f https://raw.githubusercontent.com/flussonic/central-operator/master/config/samples/media_v1alpha1_mediaserver.yaml
+kubectl apply -f https://raw.githubusercontent.com/flussonic/central-operator/master/config/samples/media_v1alpha1_central.yaml
 kubectl apply -f https://raw.githubusercontent.com/flussonic/central-operator/master/config/samples/postgres.yaml
 kubectl apply -f https://raw.githubusercontent.com/flussonic/central-operator/master/config/samples/redis.yaml
 ```
 
-Примечание: сейчас централ корректно работает только с nginx в качестве ingess-контроллера (требование агента), поэтому если по умолчанию используется что-то другое, необходимо удалить его из кубера и применить манифесты ingress-nginx:
+Note: Currently, Central works correctly only with Nginx as the ingress controller (required by the agent). If another controller is used by default, remove it from Kubernetes and apply the ingress-nginx manifests:
 
 ```sh
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
+kubectl apply -f https://raw.githubusercontent.com/flussonic/central-operator/master/config/samples/nginx_ingress_class.yaml
 ```
 
-При выполнении всех инструкций выше должен был развернуться кластер из постгреса, редиса, двух инстансов централа и одного медиасервера.
+If all the above steps are completed successfully, the cluster should include PostgreSQL, Redis, two Central instances, and one Flussonic instance per each labeled node.
+
+## For developers
+
+The project was generated using [operator-sdk](https://sdk.operatorframework.io/).
+
+To generate the documentation, update the `version` in the Makefile to the current one and run:
+
+```sh
+make operator.yaml
+```
+
+To launch the cluster on multipass and k3s, run:
+
+```sh
+make mp-start
+```
+
+The script is configured to build the controller locally and transfer it to the nodes.
+
+If you need to run the cluster using the controller image from Docker Hub, execute `mp-start.sh` directly.
 
 ## License
 
@@ -62,13 +87,3 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-
-## Для разработчиков
-
-Проект сгенерирован при помощи [operator-sdk](https://sdk.operatorframework.io/).
-
-Чтобы сгенерить доку нужно выполнить в makefile исправить `version` на актуальную, и выполнить `make operator.yaml`.
-
-Для запуска кластера на multipass и k3s необходимо выполнить `make mp-start`. В скрипт зашито то, что контроллер билдится локально и прокидывается на ноды.
-
-Если необходимо запустить кластер с образом контроллера из докерхаба, можно выполнить `./mp-start.sh`.
