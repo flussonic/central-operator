@@ -331,10 +331,6 @@ spec:
                       type: string
                     publicPayloadUrl:
                       type: string
-                  required:
-                  - apiUrl
-                  - privatePayloadUrl
-                  - publicPayloadUrl
                   type: object
                 description: Flussonic API port
                 type: object
