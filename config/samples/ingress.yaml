@@ -7,20 +7,20 @@ spec:
   rules:
     - http:
         paths:
-          - path: /vsaas
-            pathType: Prefix
-            backend:
-              service:
-                name: watcher-service
-                port:
-                  number: 80
-          - path: /watcher
-            pathType: Prefix
-            backend:
-              service:
-                name: watcher-service
-                port:
-                  number: 80
+          # - path: /vsaas
+          #   pathType: Prefix
+          #   backend:
+          #     service:
+          #       name: watcher-service
+          #       port:
+          #         number: 80
+          # - path: /watcher
+          #   pathType: Prefix
+          #   backend:
+          #     service:
+          #       name: watcher-service
+          #       port:
+          #         number: 80
           - path: /
             pathType: Prefix
             backend:

@@ -1,12 +1,6 @@
 apiVersion: media.flussonic.com/v1alpha1
 kind: Watcher
 metadata:
-  labels:
-    app.kubernetes.io/name: watcher
-    app.kubernetes.io/instance: watcher-sample
-    app.kubernetes.io/part-of: watcher-operator
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/created-by: watcher-operator
   name: watcher-sample
 spec:
   central: "http://central.default.svc.cluster.local"

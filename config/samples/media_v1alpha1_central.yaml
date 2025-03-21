@@ -2,16 +2,11 @@ apiVersion: media.flussonic.com/v1alpha1
 kind: Central
 metadata:
   labels:
-    app.kubernetes.io/name: central
-    app.kubernetes.io/instance: central
-    app.kubernetes.io/part-of: central-operator
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/created-by: central-operator
     app: central
   name: central
 spec:
   database: "postgresql://test:test@postgres.default.svc.cluster.local:5432/test_c"
-  version: "v25.02-18"
+  version: "v25.03-22"
   apiKey: "apikey"
   provisionerClusterKey: "clusterkey"
   provisionerSelector: "mediaserver-media-server"
