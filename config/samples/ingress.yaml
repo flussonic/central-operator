@@ -21,6 +21,13 @@ spec:
           #       name: watcher-service
           #       port:
           #         number: 80
+          - path: /endpoint/connect
+            pathType: Prefix
+            backend:
+              service:
+                name: central-agents
+                port:
+                  number: 80
           - path: /
             pathType: Prefix
             backend:

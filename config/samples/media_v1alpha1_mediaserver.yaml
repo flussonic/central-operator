@@ -3,7 +3,7 @@ kind: MediaServer
 metadata:
   name: mediaserver
 spec:
-  version: "v25.01-34"
+  version: "v25.04-8"
   hostPort: 85
   adminHostPort: 81
   env:

@@ -6,8 +6,10 @@ metadata:
   name: central
 spec:
   database: "postgresql://test:test@postgres.default.svc.cluster.local:5432/test_c"
-  version: "v25.03-22"
+  redis: "redis://redis.default.svc.cluster.local:6379"
+  version: "v25.04.1-21"
   apiKey: "apikey"
+  apiURL: "http://central.default.svc.cluster.local"
   provisionerClusterKey: "clusterkey"
   provisionerSelector: "mediaserver-media-server"
   central:
@@ -21,8 +23,6 @@ spec:
             optional: false
       - name: CENTRAL_EDIT_AUTH
         value: "admin pass"
-      - name: CENTRAL_REDIS_URL
-        value: "redis://redis.default.svc.cluster.local:6379"
       - name: CENTRAL_LOG_LEVEL
         value: "debug"
       - name: CENTRAL_LOG_REQUESTS
@@ -37,11 +37,19 @@ spec:
     env:
       - name: CENTRAL_LAYOUTER_SLEEPING_INTERVAL
         value: "30s"
-      - name: CENTRAL_DATABASE_URL
-        value: "postgresql://test:test@postgres.default.svc.cluster.local:5432/test_c"
       - name: CENTRAL_LOG_LEVEL
         value: "debug"
       - name: CENTRAL_STREAMER_DEAD_TIMEOUT
         value: "60s"
-      - name: CENTRAL_LAYOUTER_SLEEPING_INTERVAL
-        value: "10s"
+  agentsUnit:
+    env:
+      - name: CENTRAL_LOG_LEVEL
+        value: "debug"
+      - name: CENTRAL_LOG_REQUESTS
+        value: "true"
+  singletonUnit:
+    env:
+      - name: CENTRAL_LOG_LEVEL
+        value: "debug"
+      - name: CENTRAL_LOG_REQUESTS
+        value: "true"
