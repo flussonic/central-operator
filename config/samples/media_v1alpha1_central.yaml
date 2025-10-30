@@ -7,7 +7,7 @@ metadata:
 spec:
   database: "postgresql://test:test@postgres.default.svc.cluster.local:5432/test_c"
   redis: "redis://redis.default.svc.cluster.local:6379"
-  version: "v25.04.1-21"
+  version: "v25.10.1-36"
   apiKey: "apikey"
   apiURL: "http://central.default.svc.cluster.local"
   provisionerClusterKey: "clusterkey"
@@ -33,6 +33,12 @@ spec:
         value: "60s"
       - name: CENTRAL_LAYOUTER_SLEEPING_INTERVAL
         value: "10s"
+    # To use envFrom, you must first create the ConfigMap and/or Secret in your cluster.
+    # envFrom:
+    #   - configMapRef:
+    #       name: central-config
+    #   - secretRef:
+    #       name: central-secret
   layouter:
     env:
       - name: CENTRAL_LAYOUTER_SLEEPING_INTERVAL
