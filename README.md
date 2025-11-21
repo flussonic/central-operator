@@ -72,6 +72,38 @@ The script is configured to build the controller locally and transfer it to the 
 
 If you need to run the cluster using the controller image from Docker Hub, execute `mp-start.sh` directly.
 
+## Deployment Workflow
+
+We use a semi-automated GitOps workflow. The CI pipeline builds artifacts automatically on every commit to `master`, but the deployment to the cluster is triggered by updating the GitOps repository.
+
+### 1. Prepare Changes
+
+Before merging your changes to `master`, you **MUST** increment the version if you want to release a new build.
+
+1. **Update Version:** Change the `VERSION` variable in the `Makefile`.
+    - *Warning:* If you do not change the version, the existing Docker image and manifests for that version will be **overwritten** in the registry.
+2. **Generate Manifest:** Run `make operator.yaml` to generate the installation manifest for the new version.
+3. **Commit and Merge:** Push your changes and merge them into the `master` branch.
+
+### 2. CI/CD Pipeline
+
+Once merged to `master`, the GitLab CI pipeline will automatically:
+
+- **Build and Push Image:** Build the Docker image and push it to Docker Hub.
+- **Publish Manifests:** Push the generated `docs/` folder to the Github. The new operator manifest will be available at:
+`https://flussonic.github.io/central-operator/<version>/operator.yaml`
+
+### 3. Deploy to Cluster
+
+To apply the new version to the cluster (Stage or Prod), you need to update the GitOps repository (`peeklio_cluster`).
+
+1. **Update Kustomization:**
+    - For **Stage**: Edit `central-operator/overlays/stage/kustomization.yaml`.
+    - For **Prod**: Edit `central-operator/base/kustomization.yaml`
+2. **Change Resource URL:** Update the link to point to the new version
+3. **Commit and Push:** Commit and push the change.
+4. **Sync:** ArgoCD detects the configuration change, you may need to manually trigger the **Sync** to apply the update.
+
 ## License
 
 Copyright 2024.
