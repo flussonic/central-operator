@@ -72,6 +72,36 @@ The script is configured to build the controller locally and transfer it to the 
 
 If you need to run the cluster using the controller image from Docker Hub, execute `mp-start.sh` directly.
 
+Ты абсолютно прав, я увлекся сокращением и упустил важную деталь. Прошу прощения.
+
+Вот исправленная, короткая и полная версия.
+
+---
+
+### Environment Variables Configuration
+
+The operator configures components using environment variables with a clear order of precedence. A source with a higher number in the list below will always override a source with a lower number.
+
+#### Precedence Rules (from highest to lowest)
+
+1. **Unit-Specific `env`**
+    - Defined in `spec.central.env`, `spec.layouter.env`, etc.
+    - *Purpose:* Fine-tune or override settings for a single component.
+
+2. **Required Fields in `spec`**
+    - Defined via `spec.database`, `spec.redis`, `spec.apiKey`, `spec.apiURL`.
+    - *Purpose:* The primary and **required** way to configure critical settings for all components.
+
+3. **Common `env`**
+    - Defined in `spec.commonEnv`.
+    - *Purpose:* Set non-critical, user-defined variables for all components at once.
+
+4. **`envFrom` sources**
+    - Defined in `spec.commonEnvFrom` or unit-specific `envFrom`.
+    - *Purpose:* Load variables in bulk from ConfigMaps or Secrets.
+
+> **Important:** To ensure stability, attempts to set critical variables (like `CENTRAL_DATABASE_URL`) via `commonEnv` are **ignored**. You must use the dedicated `spec.database` field. However, you can override it in a unit-specific `env` for advanced use cases.
+
 ## Deployment Workflow
 
 We use a semi-automated GitOps workflow. The CI pipeline builds artifacts automatically on every commit to `master`, but the deployment to the cluster is triggered by updating the GitOps repository.
