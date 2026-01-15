@@ -72,8 +72,6 @@ The script is configured to build the controller locally and transfer it to the 
 
 If you need to run the cluster using the controller image from Docker Hub, execute `mp-start.sh` directly.
 
----
-
 ### Environment Variables Configuration
 
 The operator configures components using environment variables with a clear order of precedence. A source with a higher number in the list below will always override a source with a lower number.
@@ -85,7 +83,7 @@ The operator configures components using environment variables with a clear orde
     - *Purpose:* Fine-tune or override settings for a single component.
 
 2. **Required Fields in `spec`**
-    - Defined via `spec.database`, `spec.redis`, `spec.apiKey`
+    - Defined via `spec.database`, `spec.redis`, `spec.apiKey`.
     - *Purpose:* The primary and **required** way to configure critical settings for all components.
 
 3. **Common `env`**
