@@ -72,10 +72,6 @@ The script is configured to build the controller locally and transfer it to the 
 
 If you need to run the cluster using the controller image from Docker Hub, execute `mp-start.sh` directly.
 
-Ты абсолютно прав, я увлекся сокращением и упустил важную деталь. Прошу прощения.
-
-Вот исправленная, короткая и полная версия.
-
 ---
 
 ### Environment Variables Configuration
@@ -89,7 +85,7 @@ The operator configures components using environment variables with a clear orde
     - *Purpose:* Fine-tune or override settings for a single component.
 
 2. **Required Fields in `spec`**
-    - Defined via `spec.database`, `spec.redis`, `spec.apiKey`, `spec.apiURL`.
+    - Defined via `spec.database`, `spec.redis`, `spec.apiKey`
     - *Purpose:* The primary and **required** way to configure critical settings for all components.
 
 3. **Common `env`**
