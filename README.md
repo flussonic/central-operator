@@ -54,23 +54,34 @@ If all the above steps are completed successfully, the cluster should include Po
 
 ## For developers
 
-The project was generated using [operator-sdk](https://sdk.operatorframework.io/).
+The project is based on [operator-sdk](https://sdk.operatorframework.io/). Versioning is handled automatically via Git tags.
 
-To generate the documentation, update the `version` in the Makefile to the current one and run:
+### Local Development
 
-```sh
+To run the operator against your current Kubernetes context (**сheck your kubeconfig, use only the test cluster!**), execute:
+
+```bash
+make install
+make run
+```
+
+### Generating Manifests
+
+To generate the final `operator.yaml` with the version derived from the current Git state:
+
+```bash
 make operator.yaml
 ```
 
-To launch the cluster on multipass and k3s, run:
+### Local Cluster (Multipass + k3s)
 
-```sh
+To deploy a complete local test environment. **Requires `LICENSE_KEY` environment variable.**
+
+```bash
 make mp-start
 ```
 
-The script is configured to build the controller locally and transfer it to the nodes.
-
-If you need to run the cluster using the controller image from Docker Hub, execute `mp-start.sh` directly.
+This command uses the manifest from `docs/latest/operator.yaml`, deploying the latest version from the `master` branch, not your local code changes. To stop the environment, run `make mp-stop`.
 
 ### Environment Variables Configuration
 
@@ -98,26 +109,31 @@ The operator configures components using environment variables with a clear orde
 
 ## Deployment Workflow
 
-We use a semi-automated GitOps workflow. The CI pipeline builds artifacts automatically on every commit to `master`, but the deployment to the cluster is triggered by updating the GitOps repository.
+We use a semi-automated GitOps workflow.
 
-### 1. Prepare Changes
+### Testing a Branch
 
-Before merging your changes to `master`, you **MUST** increment the version if you want to release a new build.
+1. To test changes from a feature branch, go to your Merge Request in GitLab and manually trigger the `dockerhub-rolling` CI job. This will build a Docker image.
+2. Run `make operator.yaml` locally. This will generate a manifest with a unique version in a `docs/version-name/` directory.
+3. Apply this temporary manifest to your test cluster: `kubectl apply -f docs/version-name/operator.yaml`.
 
-1. **Update Version:** Change the `VERSION` variable in the `Makefile`.
-    - *Warning:* If you do not change the version, the existing Docker image and manifests for that version will be **overwritten** in the registry.
-2. **Generate Manifest:** Run `make operator.yaml` to generate the installation manifest for the new version.
-3. **Commit and Merge:** Push your changes and merge them into the `master` branch.
+### Creating a Release
 
-### 2. CI/CD Pipeline
+The release process requires two commits and is based on Git tags.
 
-Once merged to `master`, the GitLab CI pipeline will automatically:
+1. **Merge** your dev branch into `master`.
+2. **Create and push a Git tag**. This will trigger a CI pipeline that builds and publishes the final Docker image.
 
-- **Build and Push Image:** Build the Docker image and push it to Docker Hub.
-- **Publish Manifests:** Push the generated `docs/` folder to the Github. The new operator manifest will be available at:
-`https://flussonic.github.io/central-operator/<version>/operator.yaml`
+   ```bash
+   # Example:
+   git tag -a v26.1.6 -m 'version 26.1.6' && git push --tags
+   ```
 
-### 3. Deploy to Cluster
+3. **Generate and commit the final manifest.** After the tag is pushed, run `make operator.yaml` locally. This will update `docs/latest/` and create `docs/v26.1.6/`. Commit these changes to the `master` branch and push.
+
+4. **Publish documentation.** The final push to `master` will trigger another CI pipeline. Manually run the `push-docs-to-github` job to publish the manifests.
+
+### Deploy to vsaas.io Cluster
 
 To apply the new version to the cluster (Stage or Prod), you need to update the GitOps repository (`peeklio_cluster`).
 
